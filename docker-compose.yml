@@ -1,0 +1,48 @@
+version: "3.2"
+
+networks:
+  laravel-network:
+    driver: bridge
+
+volumes:
+  db: {}
+
+services:
+  nginx-laravel:
+    container_name: nginx_laravel
+    image: nginx:1.17.8
+    ports:
+      - 80:80
+    volumes:
+      - ./docker/config/nginx/site.conf:/etc/nginx/conf.d/site.conf
+      - ./app:/php_app
+    depends_on:
+      - php_app
+      - db
+    networks:
+      - laravel-network
+  php_app:
+    # build: php_app
+    build:
+      context: ./docker/config/php/
+      dockerfile: Dockerfile
+    container_name: php_app
+    volumes:
+      - ./app:/php_app
+    networks:
+      - laravel-network
+
+  db:
+    container_name: db
+    image: postgres:14-alpine
+    tty: true
+    ports:
+      - 5432:5432
+    volumes:
+      - db:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_DB=laravel
+    networks:
+      - laravel-network
